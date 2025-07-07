@@ -265,6 +265,15 @@ func (m *minerStruct) Login(jsonData json.RawMessage) {
 	} else {
 		m.cronJobs = append(m.cronJobs, entry)
 	}
+	if entry, err := config.SystemCrons.AddCronJob("*/30 * * * * *", func() {
+		m.mu.RLock()
+		defer m.mu.RUnlock()
+		config.MinerDiff.Add(int(m.Difficulty))
+	}); err != nil {
+		m.Milieu.CaptureException(err)
+	} else {
+		m.cronJobs = append(m.cronJobs, entry)
+	}
 
 }
 
@@ -280,6 +289,7 @@ func (m *minerStruct) NewDiff() {
 	if m.proxy {
 		targetTime = 5
 	}
+	m.mu.RLock()
 	curDiff := m.Difficulty
 	newDiff := m.Difficulty
 	if m.hashes > 0 {
@@ -289,6 +299,7 @@ func (m *minerStruct) NewDiff() {
 		// Secondary mechanism provides a 10% reduction from inital to help miners settle in
 		newDiff = uint64(float64(newDiff) * 0.9)
 	}
+	m.mu.RUnlock()
 	if newDiff > uint64(float64(curDiff)*.95) && newDiff < uint64(float64(curDiff)*1.05) {
 		// No change when diff is within 10% of current.  We only want to shift when it's useful.
 		return
@@ -304,7 +315,9 @@ func (m *minerStruct) NewDiff() {
 	} else if newDiff > config.MaxDifficulty && !m.proxy {
 		newDiff = config.MaxDifficulty
 	}
+	m.mu.Lock()
 	m.Difficulty = newDiff
+	m.mu.Unlock()
 	m.SendNewJob(false)
 	m.Milieu.Debug(fmt.Sprintf("New difficulty: %d from %d with %d hashes over %d connection time\n", newDiff, curDiff, m.hashes, m.getConnSeconds()))
 }
@@ -449,11 +462,13 @@ func (m *minerStruct) SubmitJob(jsonData json.RawMessage) {
 		if err != nil {
 			m.Milieu.Debug("SubmitBlock called with invalid block header")
 			m.RPCShareResponse(fmt.Sprintf(`Invalid Nonce %v`, submittedWork.Nonce), false)
+			config.ShareCount.Incr("invalid")
 			return
 		}
 		if diff < job.Target {
 			// Not a valid share, do not track, do not pass go.
 			m.RPCShareResponse(fmt.Sprintf(`Low difficulty share %v`, submittedWork.ID), false)
+			config.ShareCount.Incr("invalid")
 			return
 		}
 		if diff < job.BlockResult.MinerData.TargetDifficulty {
@@ -461,6 +476,8 @@ func (m *minerStruct) SubmitJob(jsonData json.RawMessage) {
 			// OKAY SUCCESS!
 			m.hashes += job.Target
 			m.RPCShareResponse(``, true)
+			config.ShareCount.Incr("valid")
+			config.MinerDiff.Add(int(job.Target))
 			return
 		}
 		go m.CleanMinerJobs()
@@ -471,12 +488,16 @@ func (m *minerStruct) SubmitJob(jsonData json.RawMessage) {
 			m.hashes += job.Target
 			m.Milieu.Info("SubmitBlock called with invalid block")
 			m.RPCShareResponse(fmt.Sprintf(`Invalid block %v`, submittedWork.ID), false)
+			config.ShareCount.Incr("valid")
+			config.MinerDiff.Add(int(job.Target))
 			return
 		}
 
 		// Submit share to backend as valid, with block find
-		m.Milieu.Info(fmt.Sprintf("SubmitBlock called with valid block at %v", job.BlockResult.Block.Header.Height))
+		m.Milieu.Info(fmt.Sprintf("Block Found!  SubmitBlock called with valid block for %v - %x", job.BlockResult.Block.Header.Height, job.BlockResult.Block.Header.Hash))
 		m.RPCShareResponse(``, true)
 		m.hashes += job.Target
+		config.ShareCount.Incr("valid")
+		config.MinerDiff.Add(int(job.Target))
 	}
 }

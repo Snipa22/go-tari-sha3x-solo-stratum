@@ -54,6 +54,7 @@ func main() {
 	config.StartingDifficulty = *startingDiff
 	config.MinimumDifficulty = *minDiff
 	config.MaxDifficulty = *maxDiff
+	config.InitShareCount()
 
 	if *nextnetPtr {
 		config.AllowedAddressPrefixes = []string{"32", "34"}
@@ -82,6 +83,36 @@ func main() {
 
 	_, _ = c.AddFunc("* * * * * *", func() {
 		blockTemplateCache.UpdateBlockTemplateCache(milieu)
+	})
+
+	_, _ = c.AddFunc("*/30 * * * * *", func() {
+		diff := config.MinerDiff.Get()
+		diffText := "0 H/s"
+		if diff != 0 {
+			diff = diff / 30
+		}
+		if diff < 1000000000000000 {
+			diffText = fmt.Sprintf("%.3f TH/s", float64(diff)/1000000000000)
+		}
+		if diff < 1000000000000 {
+			diffText = fmt.Sprintf("%.3f GH/s", float64(diff)/1000000000)
+		}
+		if diff < 1000000000 {
+			diffText = fmt.Sprintf("%.3f MH/s", float64(diff)/1000000)
+		}
+		if diff < 1000000 {
+			diffText = fmt.Sprintf("%.3f KH/s", float64(diff)/1000)
+		}
+		if diff < 1000 {
+			diffText = fmt.Sprintf("%d H/s", diff)
+		}
+		milieu.Info(fmt.Sprintf("%v/%v/%v/%v Valid/Trusted/Invalid/Total shares in last 30s - %v",
+			config.ShareCount.Get("valid"),
+			config.ShareCount.Get("trusted"),
+			config.ShareCount.Get("invalid"),
+			config.ShareCount.Get("total"),
+			diffText))
+
 	})
 
 	// Start Verification
@@ -118,7 +149,7 @@ func main() {
 
 	// Start all cron tasks
 	c.Start()
-
+	milieu.Info(fmt.Sprintf("Pool up and running on port %v, ready for connections", *poolPort))
 	for {
 		select {}
 	}
