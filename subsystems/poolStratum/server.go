@@ -8,6 +8,7 @@ import (
 	"github.com/snipa22/go-tari-p2pool-interface/subsystems/messages"
 	"io"
 	"net"
+	"sync"
 	"strings"
 	"time"
 )
@@ -24,32 +25,46 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 		// Register the client has connected
 		// Init the miner data structure
 		// Listen for traffic on the connection, prepping the natural timeout system
-		quit := make(chan bool)
+		var closeOnce sync.Once
+		quit := make(chan bool, 1)
 		miner := newMiner(inConn, hashChan, milieu, quit)
 		newBt := make(chan bool)
+
 		// TODO: Add tracking for connection counts for miner counts
-		defer func() {
-			// TODO: Add tracking for disconnection counts for miner counts
-			fmt.Println("Closing miner")
-			for _, v := range miner.cronJobs {
-				config.SystemCrons.DeleteCronJob(v)
-			}
-			_ = inConn.Close()
-			miner = nil
-		}()
+
+		// cleanup logic — only runs once
+		cleanup := func() {
+			closeOnce.Do(func() {
+				// TODO: Add tracking for disconnection counts for miner counts
+				fmt.Println("Closing miner")
+				for _, v := range miner.cronJobs {
+					config.SystemCrons.DeleteCronJob(v)
+				}
+				_ = inConn.Close()
+				miner = nil
+			})
+		}
 
 		time.AfterFunc(30*time.Second, func() {
 			if miner != nil && !miner.Active {
-				quit <- true
+				select {
+				case quit <- true:
+				default:
+				}
 			}
 		})
 		time.AfterFunc(45*time.Second, func() {
 			if miner != nil && miner.Address == "" {
-				quit <- true
+				select {
+				case quit <- true:
+				default:
+				}
 			}
 		})
+
 		tmp := make([]byte, 2048)
 		data := make([]byte, 0)
+
 		for {
 			select {
 			case <-newBt:
@@ -57,6 +72,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 			case <-quit:
 				fmt.Println("ClientConn quit")
 				miner.Active = false
+				cleanup()
 				return
 			default:
 				// Perform data read and traffic management
@@ -66,15 +82,18 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 					if err != io.EOF {
 						if strings.Contains(err.Error(), "connection timed out") {
 							milieu.Error("Exiting due to a connection timeout")
+							cleanup()
 							return
 						}
 						if strings.Contains(err.Error(), "connection reset by peer") {
 							milieu.Error("Exiting due to a connection reset by peer")
+							cleanup()
 							return
 						}
 						milieu.Error(err.Error())
 					}
-					break
+					cleanup()
+					return
 				}
 				found := 0
 				data = append(data, tmp[:n]...)
@@ -86,6 +105,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 				}
 				if found == 0 {
 					if len(data) >= 20480 {
+						cleanup()
 						return
 					}
 				}
@@ -106,6 +126,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 						} else if strings.Contains(v, "HTTP/1.0") {
 							_, _ = inConn.Write([]byte(fmt.Sprintf("HTTP/1.0%v", httpDummy)))
 						}
+						cleanup()
 						return
 					}
 					// Parse and handle the real work
@@ -115,6 +136,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 					parsedJson := messages.MinerRPCRequest{}
 					if err = json.Unmarshal([]byte(v), &parsedJson); err != nil {
 						milieu.Error(err.Error())
+						cleanup()
 						return
 					}
 					miner.Active = true
@@ -139,6 +161,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 						// Do keepalive
 						if miner.Address == "" {
 							miner.RPCResponse("Unauthenticated", "")
+							cleanup()
 							return
 						}
 						miner.RPCResponse("", "KEEPALIVED")
