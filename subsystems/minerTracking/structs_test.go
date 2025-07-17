@@ -2,7 +2,7 @@ package minerTracking
 
 import (
 	"fmt"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/tari_generated"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"reflect"
 	"sync"
 	"testing"

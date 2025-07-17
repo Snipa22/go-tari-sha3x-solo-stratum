@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	core "github.com/Snipa22/core-go-lib/milieu"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
 	"github.com/snipa22/go-tari-p2pool-interface/subsystems/blockTemplateCache"

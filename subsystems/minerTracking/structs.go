@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/Snipa22/core-go-lib/milieu"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/tari_generated"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"github.com/google/uuid"
 	"github.com/snipa22/go-tari-p2pool-interface/subsystems/messages"
 	"math/rand"

@@ -30,6 +30,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 		// TODO: Add tracking for connection counts for miner counts
 		defer func() {
 			// TODO: Add tracking for disconnection counts for miner counts
+			fmt.Println("Closing miner")
 			for _, v := range miner.cronJobs {
 				config.SystemCrons.DeleteCronJob(v)
 			}

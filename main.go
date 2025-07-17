@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/Snipa22/core-go-lib/helpers"
 	core "github.com/Snipa22/core-go-lib/milieu"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/snipa22/go-tari-p2pool-interface/subsystems/blockTemplateCache"

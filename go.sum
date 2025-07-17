@@ -4,6 +4,8 @@ github.com/Snipa22/core-go-lib v1.2.0 h1:EBhi/CXcartFxVrMzmbzC9wVGHPoa7lgHVY3BKO
 github.com/Snipa22/core-go-lib v1.2.0/go.mod h1:4NMLEWuo0bl180Lwfd4VbvVwUlhhRRUgkzl+mjRDDc8=
 github.com/Snipa22/go-tari-grpc-lib/v2 v2.3.0 h1:5jtKSqBP7O/k5zta4n0WFkmdlaDWjBtO2ilD/YCcNjc=
 github.com/Snipa22/go-tari-grpc-lib/v2 v2.3.0/go.mod h1:N1X4TJWhnifZMTIb/4KYmodfTzlk7rUlt18mEfBlJHA=
+github.com/Snipa22/go-tari-grpc-lib/v3 v3.0.1 h1:flyQwMYBrL9b6PN/sAgttgsPS8pEDFGYqbgzDC5vrt4=
+github.com/Snipa22/go-tari-grpc-lib/v3 v3.0.1/go.mod h1:PhFhxISrJsqnix9QDy16YuxpbpPEcQzFkixNtJftSx8=
 github.com/Snipa22/go-xmr-lib v0.2.4 h1:XOAa6RW9z2AkTl2v5OVSE9EZ4EEFCyK6gFQMFgUT5rI=
 github.com/Snipa22/go-xmr-lib v0.2.4/go.mod h1:8U2SctyDXHNSt16fwBEKH/vykzBn51ek9dywRYZpe9M=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=

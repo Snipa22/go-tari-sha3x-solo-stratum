@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/Snipa22/core-go-lib v1.2.0
-	github.com/Snipa22/go-tari-grpc-lib/v2 v2.3.0
+	github.com/Snipa22/go-tari-grpc-lib/v3 v3.0.1
 	github.com/Snipa22/go-xmr-lib v0.2.4
 	github.com/clagraff/pad v1.0.0
 	github.com/golang/protobuf v1.5.4
