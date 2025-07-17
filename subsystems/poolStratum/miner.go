@@ -247,7 +247,7 @@ func (m *minerStruct) Login(jsonData json.RawMessage) {
 	if strings.Contains(login.Agent, `tari-osprey`) {
 		m.needsXN = true
 	}
-	if strings.Contains(login.Agent, `hashreactor (0.3.0)`) {
+	if strings.Contains(login.Agent, `hashreactor`) {
 		m.needsXN = true
 	}
 	// Is this a proxy?

@@ -27,25 +27,43 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 		quit := make(chan bool)
 		miner := newMiner(inConn, hashChan, milieu, quit)
 		newBt := make(chan bool)
+		var t1 *time.Timer
+		var t2 *time.Timer
 		// TODO: Add tracking for connection counts for miner counts
-		defer func() {
+		cleanupFunc := func() {
+			if miner == nil {
+				return
+			}
 			// TODO: Add tracking for disconnection counts for miner counts
 			fmt.Println("Closing miner")
 			for _, v := range miner.cronJobs {
 				config.SystemCrons.DeleteCronJob(v)
 			}
-			_ = inConn.Close()
+			closeErr := inConn.Close()
+			if closeErr != nil {
+				milieu.Error(closeErr.Error())
+			}
+			if t1 != nil {
+				t1.Stop()
+				t1 = nil
+			}
+			if t2 != nil {
+				t2.Stop()
+				t2 = nil
+			}
 			miner = nil
-		}()
+		}
 
-		time.AfterFunc(30*time.Second, func() {
+		t1 = time.AfterFunc(30*time.Second, func() {
 			if miner != nil && !miner.Active {
-				quit <- true
+				cleanupFunc()
+				return
 			}
 		})
-		time.AfterFunc(45*time.Second, func() {
+		t2 = time.AfterFunc(45*time.Second, func() {
 			if miner != nil && miner.Address == "" {
-				quit <- true
+				cleanupFunc()
+				return
 			}
 		})
 		tmp := make([]byte, 2048)
@@ -56,7 +74,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 				// TODO: Call the new job subroutine
 			case <-quit:
 				fmt.Println("ClientConn quit")
-				miner.Active = false
+				cleanupFunc()
 				return
 			default:
 				// Perform data read and traffic management
@@ -65,14 +83,18 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 					// log if not normal error
 					if err != io.EOF {
 						if strings.Contains(err.Error(), "connection timed out") {
-							milieu.Error("Exiting due to a connection timeout")
+							milieu.Error("Miner thread exiting due to a connection timeout")
+							cleanupFunc()
 							return
 						}
 						if strings.Contains(err.Error(), "connection reset by peer") {
-							milieu.Error("Exiting due to a connection reset by peer")
+							milieu.Error("Miner thread exiting due to a connection reset by peer")
+							cleanupFunc()
 							return
 						}
 						milieu.Error(err.Error())
+						cleanupFunc()
+						return
 					}
 					break
 				}
@@ -86,6 +108,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 				}
 				if found == 0 {
 					if len(data) >= 20480 {
+						cleanupFunc()
 						return
 					}
 				}
@@ -106,6 +129,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 						} else if strings.Contains(v, "HTTP/1.0") {
 							_, _ = inConn.Write([]byte(fmt.Sprintf("HTTP/1.0%v", httpDummy)))
 						}
+						cleanupFunc()
 						return
 					}
 					// Parse and handle the real work
@@ -115,6 +139,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 					parsedJson := messages.MinerRPCRequest{}
 					if err = json.Unmarshal([]byte(v), &parsedJson); err != nil {
 						milieu.Error(err.Error())
+						cleanupFunc()
 						return
 					}
 					miner.Active = true
@@ -139,6 +164,7 @@ func ClientConn(hashChan chan messages.HashToVerify, milieu *core.Milieu) func(n
 						// Do keepalive
 						if miner.Address == "" {
 							miner.RPCResponse("Unauthenticated", "")
+							cleanupFunc()
 							return
 						}
 						miner.RPCResponse("", "KEEPALIVED")
