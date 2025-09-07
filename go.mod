@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/Snipa22/core-go-lib v1.2.0
-	github.com/Snipa22/go-tari-grpc-lib/v3 v3.1.0
+	github.com/Snipa22/go-tari-grpc-lib/v3 v3.2.0
 	github.com/google/uuid v1.6.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/robfig/cron/v3 v3.0.1
