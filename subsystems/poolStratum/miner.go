@@ -5,6 +5,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"net"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	core "github.com/Snipa22/core-go-lib/milieu"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/google/uuid"
@@ -15,13 +23,6 @@ import (
 	"github.com/snipa22/go-tari-p2pool-interface/subsystems/minerTracking"
 	"github.com/snipa22/go-tari-p2pool-interface/subsystems/security"
 	"github.com/snipa22/go-tari-p2pool-interface/subsystems/tipDataCache"
-	"math/rand"
-	"net"
-	"regexp"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 var badXmrig, _ = regexp.Compile(`XMRig/2.([0-9]|10|11|12|13|14|15|16).*`)
@@ -61,6 +62,7 @@ type minerStruct struct {
 	CoinbaseID   []byte
 	cleanRunning bool
 	needsXN      bool
+	xn           string
 }
 
 func newMiner(conn net.Conn, hashChan chan messages.HashToVerify, milieu *core.Milieu, quitChan chan bool) (retData *minerStruct) {
@@ -89,7 +91,8 @@ func newMiner(conn net.Conn, hashChan chan messages.HashToVerify, milieu *core.M
 	binary.LittleEndian.PutUint64(buf, rand.Uint64())
 	retData.CoinbaseID = buf
 	retData.cleanRunning = false
-	retData.needsXN = false
+	retData.needsXN = true
+	retData.xn = fmt.Sprintf("%x", buf[0:2])
 	return
 }
 
@@ -339,7 +342,7 @@ func (m *minerStruct) checkForNewWork() {
 }
 
 func (m *minerStruct) getJob() (*minerTracking.MinerJob, bool) {
-	blockResult, err := blockTemplateCache.GetBlockSha3(m.CoinbaseID)
+	blockResult, err := blockTemplateCache.GetBlockWithXN(m.xn)
 	if err != nil {
 		fmt.Println(err)
 		m.Milieu.CaptureException(err)
@@ -370,7 +373,7 @@ func (m *minerStruct) SendNewJob(login bool) {
 			m.Milieu.CaptureException(err)
 		} else {
 			if m.needsXN {
-				val.XNonce = "0000"
+				val.XNonce = m.xn
 			}
 			var fmtMsg interface{}
 			if !login {
@@ -442,6 +445,11 @@ func (m *minerStruct) SubmitJob(jsonData json.RawMessage) {
 			return
 		}
 		nonce := binary.LittleEndian.Uint64(b)
+		// Check to see if the nonce has the XN
+		if !strings.HasPrefix(strings.ToLower(submittedWork.Nonce), m.xn) {
+			m.RPCShareResponse(fmt.Sprintf(`Invalid XNonce %v`, submittedWork.Nonce), false)
+			return
+		}
 		job.NonceMutex.RLock()
 		for _, v := range job.UsedNonces {
 			if nonce == v {

@@ -5,15 +5,18 @@ import (
 	"crypto/sha3"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"math/rand"
+	"sync"
+
 	"github.com/Snipa22/core-go-lib/milieu"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"github.com/holiman/uint256"
 	"github.com/snipa22/go-tari-p2pool-interface/subsystems/config"
+	"github.com/snipa22/go-tari-p2pool-interface/subsystems/tipDataCache"
 	"golang.org/x/crypto/blake2b"
-	"math/rand"
-	"sync"
 )
 
 // poolID is a random byte string used to ID the pool in the coinbase txn
@@ -36,12 +39,26 @@ type blockTemplateCacheStruct struct {
 var sha3xBTCache *blockTemplateCacheStruct = nil
 var rxmBTCache *blockTemplateCacheStruct = nil
 
+var globalBlockCache = make([]blockCacheStruct, 0)
+var globalBlocKCacheMutex sync.Mutex
+
+type blockCacheStruct struct {
+	block  *tari_generated.GetNewBlockResult
+	xnUsed []string
+}
+
 // When a miner requests a block template, we need to update the coinbase txn with their unique hash and the pool hash
 
 // UpdateBlockTemplateCache keeps the main block template system spinning and updating to keep things clean
 func UpdateBlockTemplateCache(core *milieu.Milieu) {
 	if len(poolStringIDList) == 0 {
-		poolStringIDList = append(poolStringIDList, []byte("Developme"))
+		poolStringIDList = append(poolStringIDList, []byte("  Ahri   "))
+		poolStringIDList = append(poolStringIDList, []byte("  Nytro  "))
+		poolStringIDList = append(poolStringIDList, []byte("  Taila  "))
+		poolStringIDList = append(poolStringIDList, []byte(" Ara-Ayn "))
+		poolStringIDList = append(poolStringIDList, []byte("Graha'tia"))
+		poolStringIDList = append(poolStringIDList, []byte("Y'shtola "))
+		poolStringIDList = append(poolStringIDList, []byte(" Nia-Mio "))
 	}
 	if poolID == nil {
 		buf := make([]byte, 8)
@@ -92,12 +109,12 @@ func GetBlockSha3(minerID []byte) (*tari_generated.GetNewBlockResult, error) {
 		29-37: RandomData
 		37-39: "WUF"
 	*/
-	coinbaseExtra[0] = 0x00
-	coinbaseExtra[1] = 0x00
-	coinbaseExtra[2] = 0x00
-	coinbaseExtra[37] = 0x00
-	coinbaseExtra[38] = 0x00
-	coinbaseExtra[39] = 0x00
+	coinbaseExtra[0] = 0x57
+	coinbaseExtra[1] = 0x55
+	coinbaseExtra[2] = 0x46
+	coinbaseExtra[37] = 0x57
+	coinbaseExtra[38] = 0x55
+	coinbaseExtra[39] = 0x46
 	poolString := poolStringIDList[rand.Intn(len(poolStringIDList))]
 	for i, v := range poolString {
 		coinbaseExtra[i+3] = v
@@ -114,31 +131,72 @@ func GetBlockSha3(minerID []byte) (*tari_generated.GetNewBlockResult, error) {
 		coinbaseExtra[i+28] = v
 	}
 
-	// Get the blockTemplate from the cache
-	sha3xBTCache.mutex.RLock()
-	localBT := sha3xBTCache.blockTemplate
-	blockValue := sha3xBTCache.reward
-	sha3xBTCache.mutex.RUnlock()
-
-	for _, v := range localBT.Body.Kernels {
-		blockValue += v.Fee
-	}
-
 	// Generate the coinbase transaction
 	coinbaseData := make([]*tari_generated.NewBlockCoinbase, 0)
 	coinbaseData = append(coinbaseData, &tari_generated.NewBlockCoinbase{
 		Address:            config.PoolPayoutAddress,
-		Value:              blockValue,
+		Value:              100,
 		StealthPayment:     false,
 		RevealedValueProof: true,
 		CoinbaseExtra:      coinbaseExtra,
 	})
 
 	// Get the block data w/ the coinbases
-	return nodeGRPC.GetBlockWithCoinbases(&tari_generated.GetNewBlockWithCoinbasesRequest{
-		NewTemplate: localBT,
-		Coinbases:   coinbaseData,
+	return nodeGRPC.GetNewBlockTemplateWithCoinbases(&tari_generated.GetNewBlockTemplateWithCoinbasesRequest{
+		Algo:      &tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_SHA3X},
+		Coinbases: coinbaseData,
 	})
+}
+
+func GetBlockWithXN(xn string) (*tari_generated.GetNewBlockResult, error) {
+	// CurTip
+	tip := tipDataCache.GetTipData()
+	if tip == nil {
+		return nil, errors.New("tipDataCache is nil")
+	}
+	// Lock the global mutex
+	globalBlocKCacheMutex.Lock()
+	defer globalBlocKCacheMutex.Unlock()
+	newBlockCache := make([]blockCacheStruct, 0)
+	var result *tari_generated.GetNewBlockResult = nil
+	for _, v := range globalBlockCache {
+		// Discard any blocks that have a height less or equal to tip, as they're too old
+		if v.block.Block.Header.Height <= tip.Metadata.BestBlockHeight {
+			continue
+		}
+		if result != nil {
+			newBlockCache = append(newBlockCache, v)
+			continue
+		}
+		// Check to see if the XN is used already
+		xnUsed := false
+		for _, usedXN := range v.xnUsed {
+			if usedXN == xn {
+				xnUsed = true
+			}
+		}
+		if !xnUsed {
+			v.xnUsed = append(v.xnUsed, xn)
+			result = v.block
+		}
+		newBlockCache = append(newBlockCache, v)
+	}
+	if result == nil {
+		// All current blocks have this XN in use, generate a new block
+		buf := make([]byte, 8)
+		binary.LittleEndian.PutUint64(buf, rand.Uint64())
+		poolID = &buf
+		rawBlock, err := GetBlockSha3(*poolID)
+		if err != nil {
+			return rawBlock, err
+		}
+		result = rawBlock
+		newBlockCache = append(newBlockCache, blockCacheStruct{
+			block:  rawBlock,
+			xnUsed: []string{xn},
+		})
+	}
+	return result, nil
 }
 
 // convertUint64AsLEBytes

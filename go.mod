@@ -4,16 +4,12 @@ go 1.24
 
 require (
 	github.com/Snipa22/core-go-lib v1.2.0
-	github.com/Snipa22/go-tari-grpc-lib/v3 v3.0.1
-	github.com/Snipa22/go-xmr-lib v0.2.4
-	github.com/clagraff/pad v1.0.0
-	github.com/golang/protobuf v1.5.4
+	github.com/Snipa22/go-tari-grpc-lib/v3 v3.1.0
 	github.com/google/uuid v1.6.0
 	github.com/holiman/uint256 v1.3.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/crypto v0.38.0
-	google.golang.org/grpc v1.72.2
 )
 
 require (
@@ -34,5 +30,6 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
+	google.golang.org/grpc v1.72.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )
