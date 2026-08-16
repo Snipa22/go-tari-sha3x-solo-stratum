@@ -17,12 +17,12 @@ import (
 	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/blockTemplateCache"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/config"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/messages"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/minerTracking"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/security"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/tipDataCache"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/blockTemplateCache"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/config"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/messages"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/minerTracking"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/security"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/tipDataCache"
 )
 
 var badXmrig, _ = regexp.Compile(`XMRig/2.([0-9]|10|11|12|13|14|15|16).*`)

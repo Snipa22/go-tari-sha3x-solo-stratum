@@ -1,4 +1,4 @@
-module github.com/snipa22/go-tari-p2pool-interface
+module github.com/snipa22/go-tari-sha3x-solo-stratum
 
 go 1.24
 
