@@ -9,7 +9,7 @@ Instructions for AI coding agents (OpenCode, Claude Code, or any `agents.md`-com
 ## Project
 
 - **What this repo is:** Solo stratum mining server for Tari's SHA3X proof-of-work algorithm.
-- **Module path:** `github.com/snipa22/go-tari-p2pool-interface`
+- **Module path:** `github.com/snipa22/go-tari-sha3x-solo-stratum`
 - **Depends on:** `go-tari-grpc-lib` (GRPC wrapper), `go-tari-lib` (helpers, if used), `core-go-lib` (shared utilities)
 
 ## Commands

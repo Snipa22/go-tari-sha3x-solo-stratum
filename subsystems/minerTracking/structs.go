@@ -7,7 +7,7 @@ import (
 	"github.com/Snipa22/core-go-lib/milieu"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"github.com/google/uuid"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/messages"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/messages"
 	"math/rand"
 	"sync"
 	"time"

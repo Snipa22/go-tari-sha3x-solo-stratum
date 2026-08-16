@@ -10,12 +10,12 @@ import (
 	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/blockTemplateCache"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/config"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/messages"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/poolStratum"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/sslCert"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/tipDataCache"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/blockTemplateCache"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/config"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/messages"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/poolStratum"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/sslCert"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/tipDataCache"
 	"net"
 )
 

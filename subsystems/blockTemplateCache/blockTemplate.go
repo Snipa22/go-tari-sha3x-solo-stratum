@@ -14,8 +14,8 @@ import (
 	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"github.com/holiman/uint256"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/config"
-	"github.com/snipa22/go-tari-p2pool-interface/subsystems/tipDataCache"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/config"
+	"github.com/snipa22/go-tari-sha3x-solo-stratum/subsystems/tipDataCache"
 	"golang.org/x/crypto/blake2b"
 )
 
