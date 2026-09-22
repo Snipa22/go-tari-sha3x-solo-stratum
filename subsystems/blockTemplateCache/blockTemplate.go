@@ -2,6 +2,7 @@ package blockTemplateCache
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha3"
 	"encoding/binary"
 	"encoding/hex"
@@ -66,7 +67,7 @@ func UpdateBlockTemplateCache(core *milieu.Milieu) {
 		poolID = &buf
 	}
 
-	blockTemplateResponse, err := nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_SHA3X})
+	blockTemplateResponse, err := nodeGRPC.GetBlockTemplate(context.Background(), &tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_SHA3X})
 	if err != nil {
 		core.CaptureException(err)
 		return
@@ -80,7 +81,7 @@ func UpdateBlockTemplateCache(core *milieu.Milieu) {
 	sha3xBTCache.reward = blockTemplateResponse.MinerData.Reward
 	sha3xBTCache.mutex.Unlock()
 
-	blockTemplateResponse, err = nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXM})
+	blockTemplateResponse, err = nodeGRPC.GetBlockTemplate(context.Background(), &tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXM})
 	if err != nil {
 		core.CaptureException(err)
 		return
@@ -142,7 +143,7 @@ func GetBlockSha3(minerID []byte) (*tari_generated.GetNewBlockResult, error) {
 	})
 
 	// Get the block data w/ the coinbases
-	return nodeGRPC.GetNewBlockTemplateWithCoinbases(&tari_generated.GetNewBlockTemplateWithCoinbasesRequest{
+	return nodeGRPC.GetNewBlockTemplateWithCoinbases(context.Background(), &tari_generated.GetNewBlockTemplateWithCoinbasesRequest{
 		Algo:      &tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_SHA3X},
 		Coinbases: coinbaseData,
 	})
