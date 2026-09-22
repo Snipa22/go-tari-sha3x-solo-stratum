@@ -1,6 +1,7 @@
 package tipDataCache
 
 import (
+	"context"
 	"github.com/Snipa22/core-go-lib/milieu"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
@@ -21,7 +22,7 @@ func UpdateTipData(core *milieu.Milieu) {
 	defer func() {
 		running = false
 	}()
-	tipResponse, err := nodeGRPC.GetTipInfo()
+	tipResponse, err := nodeGRPC.GetTipInfo(context.Background())
 	if err != nil {
 		core.Debug(err.Error())
 		core.CaptureException(err)
